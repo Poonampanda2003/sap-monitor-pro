@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SAP Monitor Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .status-badge {
+            font-size: 1.1rem;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+        .alert-msg {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="/logout" class="btn btn-danger">Logout</a>
+
+    <div class="container text-center mt-5">
+        <h1 class="mb-4">SAP Monitor Pro Dashboard</h1>
+
+        <div class="card shadow-sm p-4 mx-auto" style="max-width: 400px;">
+            <p class="fs-5">CPU Usage: <span id="cpu">--</span>%</p>
+            <p class="fs-5">Memory Usage: <span id="memory">--</span> GB</p>
+            <p class="fs-5">Status: 
+                <span id="status" class="status-badge badge bg-secondary text-white">--</span>
+            </p>
+            <p class="text-muted" id="timestamp">Last updated: --</p>
+            <div id="alert" class="alert alert-danger alert-msg mt-3 d-none" role="alert"></div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+      <div class="row">
+        <div class="col-md-6">
+            <canvas id="cpuChart" height="200"></canvas>
+        </div>
+        <div class="col-md-6">
+            <canvas id="memoryChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="container mt-3 text-end">
+     <a href="/export" class="btn btn-outline-primary">
+        📥 Download CSV
+     </a>
+    </div>
+
+
+    <script>
+        function formatTime(date) {
+            return date.toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/metrics');
+                const data = await response.json();
+
+                document.getElementById('cpu').innerText = data.cpu;
+                document.getElementById('memory').innerText = data.memory;
+
+                const statusEl = document.getElementById('status');
+                const alertEl = document.getElementById('alert');
+
+                statusEl.innerText = data.status;
+                alertEl.classList.add('d-none'); // Hide alert by default
+
+                if (data.status === 'OK') {
+                    statusEl.className = 'status-badge badge bg-success text-white';
+                } else if (data.status === 'WARNING') {
+                    statusEl.className = 'status-badge badge bg-warning text-dark';
+                    alertEl.className = 'alert alert-warning alert-msg mt-3';
+                    alertEl.innerText = '⚠️ Warning: High resource usage!';
+                    alertEl.classList.remove('d-none');
+                } else {
+                    statusEl.className = 'status-badge badge bg-danger text-white';
+                    alertEl.className = 'alert alert-danger alert-msg mt-3';
+                    alertEl.innerText = '❗ Critical Alert: Immediate attention needed!';
+                    alertEl.classList.remove('d-none');
+                }
+
+                const now = new Date();
+                document.getElementById('timestamp').innerText = "Last updated: " + formatTime(now);
+
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+        fetchData();
+        setInterval(fetchData, 5000);
+    </script>
+    <script>
+    const labels = [];
+    const cpuData = [];
+    const memoryData = [];
+
+    const cpuChart = new Chart(document.getElementById('cpuChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'CPU Usage (%)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgb(255, 99, 132)',
+                data: cpuData,
+                tension: 0.3
+            }]
+        }
+    });
+
+    const memoryChart = new Chart(document.getElementById('memoryChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Memory Usage (GB)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgb(54, 162, 235)',
+                data: memoryData,
+                tension: 0.3
+            }]
+        }
+    });
+
+    function updateCharts(cpu, memory) {
+        const now = new Date();
+        const time = now.toLocaleTimeString();
+
+        if (labels.length > 12) {
+            labels.shift();
+            cpuData.shift();
+            memoryData.shift();
+        }
+
+        labels.push(time);
+        cpuData.push(cpu);
+        memoryData.push(memory);
+
+        cpuChart.update();
+        memoryChart.update();
+    }
+
+    async function fetchData() {
+        try {
+            const response = await fetch('/metrics');
+            const data = await response.json();
+
+            document.getElementById('cpu').innerText = data.cpu;
+            document.getElementById('memory').innerText = data.memory;
+
+            // Chart update
+            updateCharts(data.cpu, data.memory);
+
+            // Status logic (same as before)
+            const statusEl = document.getElementById('status');
+            const alertEl = document.getElementById('alert');
+            statusEl.innerText = data.status;
+            alertEl.classList.add('d-none');
+
+            if (data.status === 'OK') {
+                statusEl.className = 'status-badge badge bg-success text-white';
+            } else if (data.status === 'WARNING') {
+                statusEl.className = 'status-badge badge bg-warning text-dark';
+                alertEl.className = 'alert alert-warning alert-msg mt-3';
+                alertEl.innerText = '⚠️ Warning: High resource usage!';
+                alertEl.classList.remove('d-none');
+            } else {
+                statusEl.className = 'status-badge badge bg-danger text-white';
+                alertEl.className = 'alert alert-danger alert-msg mt-3';
+                alertEl.innerText = '❗ Critical Alert: Immediate attention needed!';
+                alertEl.classList.remove('d-none');
+            }
+
+            const now = new Date();
+            document.getElementById('timestamp').innerText = "Last updated: " + now.toLocaleTimeString();
+
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    }
+
+    fetchData();
+    setInterval(fetchData, 5000);
+</script>
+
+
+</body>
+</html>
