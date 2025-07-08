@@ -12,8 +12,23 @@ app = Flask(__name__)
 app.secret_key = 'your-secret-key'  # Change to something secure in production
 
 @app.route('/')
-def home():
-    return "Hello, SAP Monitor Pro is running!"
+def index():
+    # Generate dummy/random data
+    cpu = random.randint(10, 100)  # random CPU %
+    memory = round(random.uniform(1, 16), 2)  # random memory usage in GB
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Set status based on CPU usage
+    if cpu > 85:
+        status = "CRITICAL"
+    elif cpu > 65:
+        status = "WARNING"
+    else:
+        status = "OK"
+
+    return render_template("index.html", cpu=cpu, memory=memory, status=status, last_updated=timestamp)
+
+
 
 @app.route('/metrics')
 def metrics():

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SAP Monitor Pro Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f7f7f7;
+            text-align: center;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #222;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .status-ok {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-warning {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .status-critical {
+            color: red;
+            font-weight: bold;
+        }
+
+        .alert {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .alert-ok {
+            background-color: #e6ffed;
+            color: green;
+        }
+
+        .alert-warning {
+            background-color: #fffbe6;
+            color: orange;
+        }
+
+        .alert-critical {
+            background-color: #ffe6e6;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>SAP Monitor Pro Dashboard</h1>
+
+    <div class="card">
+        <p><strong>CPU Usage:</strong> {{ cpu }}%</p>
+        <p><strong>Memory Usage:</strong> {{ memory }} GB</p>
+        <p><strong>Status:</strong> 
+            <span class="status-{{ status|lower }}">{{ status }}</span>
+        </p>
+        <p><small>Last updated: {{ last_updated }}</small></p>
+
+        {% if status == "CRITICAL" %}
+            <div class="alert alert-critical">❗ Critical Alert: Immediate attention needed!</div>
+        {% elif status == "WARNING" %}
+            <div class="alert alert-warning">⚠️ Warning: High resource usage!</div>
+        {% else %}
+            <div class="alert alert-ok">✅ All systems running normally.</div>
+        {% endif %}
+    </div>
+</body>
+</html>
